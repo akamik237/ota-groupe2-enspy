@@ -54,7 +54,12 @@ pdflatex rapport.tex && bibtex rapport && pdflatex rapport.tex && pdflatex rappo
 pdflatex carnet_lecture.tex && pdflatex carnet_lecture.tex
 ```
 
-## Limites (honnêteté méthodologique)
+## Dépôt GitHub
+
+**https://github.com/akamik237/ota-groupe2-enspy**
+
+Professeur (`htapamo`) : accès en lecture invité sur le dépôt (repo public + invitation collaborateur).
+
 
 Nous **ne reproduisons pas** l'entraînement FCOS-ResNet-50 sur COCO (AP 40,7 % de l'article) : pas de GPU / PyTorch / accès COCO dans notre environnement. Le dépôt se concentre sur l'**algorithme d'assignation OTA** lui-même, validé numériquement et sur un scénario synthétique contrôlé. Voir la section Analyse critique du rapport.
 
