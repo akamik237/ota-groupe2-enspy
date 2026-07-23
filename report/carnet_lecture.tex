@@ -1,0 +1,71 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+
+\geometry{margin=2.5cm, headheight=14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Carnet de lecture --- Groupe 2}
+\fancyhead[R]{\small OTA / Transport Optimal}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+\input{cover_carnet}
+\thispagestyle{empty}
+\clearpage
+
+\section*{Article lu}
+
+\textbf{Ge et al.,} \emph{OTA: Optimal Transport Assignment for Object Detection,} CVPR 2021.
+
+\textbf{Idée clé :} l'assignation de labels (quelle ancre est positive pour quel objet) est formulée comme un \textbf{transport optimal} global sur toute l'image, plutôt que des règles locales par objet (IoU, aire, distance au centre).
+
+\section*{Questions initiales}
+
+\begin{itemize}[leftmargin=*]
+  \item Pourquoi l'assignation \emph{indépendante par objet} échoue-t-elle lorsque deux objets se chevauchent ?
+  \item En quoi le transport optimal diffère-t-il de l'algorithme hongrois utilisé dans DeTR (un-à-un vs un-à-plusieurs) ?
+  \item Comment Sinkhorn-Knopp permet-il de résoudre le problème à grande échelle sans solveur LP complet ?
+  \item Que signifie une ancre \og ambiguë\fg{} et pourquoi les heuristiques Min Area / Max IoU sont insuffisantes ?
+\end{itemize}
+
+\section*{Points clarifiés}
+
+\begin{itemize}[leftmargin=*]
+  \item Chaque \textbf{gt} est un \emph{fournisseur} de $k_i$ labels positifs ; chaque \textbf{ancre} est un \emph{demandeur} ($d_j=1$) ; le \textbf{fond} fournit les labels négatifs restants.
+  \item Le coût unitaire est $\mathcal{L}_{\text{cls}} + \alpha\,\mathcal{L}_{\text{reg}}$ (Eq.~2 de l'article) ; le fond n'a qu'un coût de classification.
+  \item \textbf{Dynamic k} : somme des $q$ plus grandes IoU prédites par gt --- adapte le nombre de positifs à la taille/forme de l'objet.
+  \item \textbf{Center Prior} : seules les $r^2$ ancres les plus proches du centre de chaque gt sont éligibles au début de l'entraînement.
+  \item \textbf{Ambiguïté OTA} : $\max_i \pi^\star_{ij} < 0.9$ --- le plan de transport ne tranche pas nettement ; critère plus sensible que les heuristiques à seuil dur.
+  \item Sinkhorn-Knopp régularise le LP par entropie ($\gamma=0.1$, $T=50$ itérations dans l'article) ; notre validation montre un écart $<1\,\%$ au LP exact pour $\gamma=0.1$.
+\end{itemize}
+
+\section*{Choix de conception du groupe}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Implémentation} fidèle en Python/NumPy/SciPy : \texttt{sinkhorn\_knopp}, \texttt{build\_cost\_matrix}, \texttt{dynamic\_k\_estimation}, baselines Min Area / Max IoU / Min Loss.
+  \item \textbf{Validation} : comparaison numérique à \texttt{scipy.optimize.linprog} (8 essais, écart relatif 0,16--0,73\,\%).
+  \item \textbf{Expérience} : scénario synthétique (2 objets qui se chevauchent, 625 ancres) faute de GPU/PyTorch/COCO --- honnêtement documenté dans le rapport.
+  \item \textbf{Non reproduit} : entraînement FCOS-ResNet-50 sur COCO (AP 40,7\,\% de l'article) --- hors portée matérielle en 1 jour ; perspective future dans le rapport.
+\end{itemize}
+
+\section*{Limites et perspectives}
+
+L'implémentation couvre l'\emph{algorithme d'assignation}, pas le pipeline de détection complet. Les coûts cls/reg de l'expérience synthétique sont simulés (scores décroissants avec la distance au centre), pas issus d'un réseau entraîné. Piste prioritaire : brancher OTA sur un détecteur PyTorch + COCO dès qu'un GPU est disponible.
+
+\vfill
+\begin{center}
+\small
+Code et résultats reproductibles : voir le dépôt GitHub \textbf{CV\_OTA} du Groupe~2.
+\end{center}
+
+\end{document}

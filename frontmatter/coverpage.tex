@@ -1,0 +1,88 @@
+% Page de garde ENSPY — layout type mémoire UY1/ENSPY
+% Définir avant \input : \CoverDocType, \CoverMainTitle
+% \CoverMainTitle peut contenir \\ pour les retours à la ligne
+% Optionnel : \CoverSubtitle
+\providecommand{\CoverSubtitle}{}
+
+\graphicspath{{../frontmatter/logos/}{frontmatter/logos/}}
+\definecolor{enspyblue}{RGB}{27,107,178}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\enlargethispage{2mm}
+
+% --- En-tête institutionnel ---
+\noindent
+\begin{minipage}[t]{0.31\textwidth}
+  \centering
+  \small
+  UNIVERSITÉ DE YAOUNDÉ I\\[2pt]
+  \textbf{*******}\\[2pt]
+  ÉCOLE NATIONALE SUPÉRIEURE\\[-1pt]
+  POLYTECHNIQUE\\[2pt]
+  \textbf{*********}\\[2pt]
+  DÉPARTEMENT DE GÉNIE\\[-1pt]
+  INFORMATIQUE
+\end{minipage}\hfill
+\begin{minipage}[t]{0.26\textwidth}
+  \centering
+  \vspace{2mm}
+  \includegraphics[width=1.75cm]{uy1.png}\\[3pt]
+  \includegraphics[width=1.75cm]{enspy.png}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.31\textwidth}
+  \centering
+  \small
+  UNIVERSITY OF YAOUNDE I\\[2pt]
+  \textbf{*******}\\[2pt]
+  NATIONAL ADVANCED SCHOOL\\[-1pt]
+  OF ENGINEERING\\[2pt]
+  \textbf{*******}\\[2pt]
+  DEPARTMENT OF COMPUTER\\[-1pt]
+  ENGINEERING
+\end{minipage}
+
+\vspace{6mm}
+{\color{enspyblue}\hrule height 1.5pt\vspace{1.5pt}\hrule height 0.8pt\par}
+\vspace{5mm}
+
+% --- Titre ---
+\begin{center}
+{\color{enspyblue}\bfseries\large \CoverMainTitle\par}
+\vspace{3mm}
+{\color{enspyblue}\small \CoverSubtitle\par}
+\end{center}
+
+\vspace{4mm}
+{\color{enspyblue}\hrule height 0.8pt\vspace{1.5pt}\hrule height 1.5pt\par}
+\vspace{6mm}
+
+% --- Type de document ---
+\begin{center}
+{\large\bfseries \CoverDocType\par}
+\vspace{7mm}
+
+Présenté par :\\[3mm]
+{\color{enspyblue}\bfseries
+  BISSOG SAMUEL DURAND\\[1mm]
+  {\normalsize Matricule : 20P125}\\[3mm]
+  BOURMEKE KIMAKA JUNIOR DIMITRI\\[1mm]
+  {\normalsize Matricule : 20P232}\\[3mm]
+  KEUMOUO TADAHA DIROIL JAMES\\[1mm]
+  {\normalsize Matricule : 20P172}\\[2mm]
+  {\normalsize\color{black}(Groupe~2 --- OTA : Transport Optimal pour la détection d'objets)}
+\par}
+
+\vspace{8mm}
+Sous la supervision de :\\[2mm]
+{\color{enspyblue}\bfseries\large Prof.\ Louis Fippo Fitime\\[1mm]
+{\normalsize Charg\'e de cours, UY1}}
+\end{center}
+
+\vfill
+
+\begin{center}
+{\large Année académique : \textbf{2025--2026}\par}
+\end{center}
+
+\end{titlepage}
