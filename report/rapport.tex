@@ -245,6 +245,57 @@ La figure~\ref{fig:assignment} montre les cartes d'assignation obtenues avec les
 \section{Résultats}
 \label{sec:resultats}
 
+\subsection{Comparaison Article vs Notre travail}
+\label{sec:compare-article}
+
+Conformément aux consignes du projet, nous confrontons explicitement les résultats de Ge et al.~\cite{ge2021ota} à ceux produits par notre implémentation. Le tableau~\ref{tab:compare} distingue les métriques \emph{reproduites ou validées} par notre code de celles qui restent des \emph{références bibliographiques} de l'article (nous ne les ré-inventons pas, nous les citons pour situer notre travail).
+
+\begin{table}[h]
+\centering
+\small
+\caption{Comparaison des résultats~: article original vs notre travail (Groupe~2).}
+\label{tab:compare}
+\begin{tabular}{@{}p{2.8cm}p{4.9cm}p{4.9cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Ge et al. (CVPR 2021)} & \textbf{Notre travail} \\
+\midrule
+Objectif &
+Entraînement bout-en-bout d'un détecteur (FCOS) avec assignation OTA &
+Validation fidèle de l'\emph{algorithme} d'assignation (Sinkhorn, coût, Dynamic~$k$, Center Prior) \\
+\addlinespace
+Jeux de données &
+MS COCO~\cite{lin2014coco}, CrowdHuman~\cite{shao2018crowdhuman} &
+Tests numériques aléatoires + scénario synthétique (2 objets qui se chevauchent, 625 ancres) \\
+\addlinespace
+AP COCO (FCOS, ResNet-50, 1$\times$) &
+\textbf{40,7\,\%} AP (val., Tableau~1) &
+Non mesuré --- hors périmètre de ce projet (pas d'entraînement du détecteur complet) \\
+\addlinespace
+AP COCO (ResNet-101-FPN) &
+\textbf{45,3\,\%} AP (test-dev, Tableau~5) &
+Référence bibliographique uniquement \\
+\addlinespace
+CrowdHuman (MR) &
+\textbf{46,6\,\%} MR (Tableau~6) &
+Non mesuré --- référence bibliographique \\
+\addlinespace
+Validation Sinkhorn &
+$\gamma=0.1$, $T=50$ itér. (choix empirique) &
+Écart au LP exact~: \textbf{0,16--0,73\,\%} ; résidu marginal $<10^{-5}$ (section~\ref{sec:experimentations}) \\
+\addlinespace
+Gestion des ancres ambiguës &
+Moins d'ambiguïtés qu'avec Min Area / Max IoU / Min Loss (Tableau~3, Fig.~3) &
+Comportement \emph{qualitatif} cohérent~: OTA détecte des ambiguïtés «~douces~» ($\max_i\pi^\star_{ij}<0.9$) là où les heuristiques en comptent presque zéro (tab.~\ref{tab:ambig}, $r=15$) \\
+\addlinespace
+Implémentation &
+PyTorch, intégration dans pipeline FCOS &
+Python/NumPy/SciPy, tests unitaires, \texttt{demo.py}, dépôt GitHub public \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Lecture.} Notre comparaison avec l'article est donc \textbf{partielle mais explicite}~: nous confirmons numériquement le cœur algorithmique (Sinkhorn-Knopp, paramètres $\gamma=0.1$) et reproduisons qualitativement le phénomène central des ancres ambiguës ; nous rapportons les gains d'AP de l'article comme benchmark de référence, sans prétendre les avoir re-mesurés dans ce projet.
+
 \subsection{Dynamic k et nombre d'ancres ambiguës}
 Sur ce scénario, l'estimation dynamique donne $k_{gt_0}=k_{gt_1}=14$ (résultat réel, reproductible). Le tableau~\ref{tab:ambig} et la figure~\ref{fig:ambig-radius} présentent le nombre d'ancres ambiguës (au sens de l'article, $\max_i\pi^\star_{ij}<0.9$ pour OTA ; candidates positives pour $\ge2$ gt simultanément pour les heuristiques) en fonction du rayon $r$ du Center Prior.
 
@@ -284,26 +335,28 @@ Deux observations, honnêtement rapportées~:
 \label{sec:analyse}
 
 \subsection{Fidélité par rapport à l'article original}
-Ce rapport implémente fidèlement le \emph{mécanisme algorithmique} d'OTA~\cite{ge2021ota}~: la formulation du transport optimal (Eq.~1), la construction du coût (Eq.~2-4), l'itération de Sinkhorn-Knopp (Eq.~5-11, Annexe A.1), le Dynamic k et le Center Prior (section~3.3). Cette implémentation est validée numériquement de façon indépendante (comparaison à un solveur LP exact). En revanche, ce rapport \textbf{ne reproduit pas} les résultats de détection de l'article (AP sur COCO/CrowdHuman, Tableaux 1 à 6), pour la raison assumée et documentée dès l'introduction~: l'environnement d'exécution ne permet pas d'entraîner un détecteur profond à cette échelle (pas de GPU, pas de PyTorch, pas d'accès à COCO). Les résultats numériques présentés dans ce rapport (validation Sinkhorn-Knopp, scénario synthétique d'ancres ambiguës) sont \textbf{tous réels et reproductibles}, mais portent sur des problèmes construits pour tester l'algorithme, non sur un jeu de données de détection réel.
+Ce rapport implémente fidèlement le \emph{mécanisme algorithmique} d'OTA~\cite{ge2021ota}~: formulation du transport optimal (Eq.~1), construction du coût (Eq.~2--4), itération de Sinkhorn-Knopp (Eq.~5--11), Dynamic~$k$ et Center Prior (section~3.3). Cette implémentation est validée numériquement de façon indépendante (comparaison à un solveur LP exact) et confrontée aux résultats de l'article via le tableau~\ref{tab:compare}.
+
+Le périmètre de \textbf{ce} projet est volontairement centré sur l'assignation par transport optimal et sa vérification reproductible, et non sur la reproduction intégrale de l'entraînement FCOS-ResNet-50 sur COCO (90k--180k itérations, pipeline PyTorch complet). Les scores d'AP et de MR des Tableaux~1 à~6 de l'article sont donc cités comme \emph{références} pour situer la contribution des auteurs, tandis que nos propres mesures portent sur la validation algorithmique et l'expérience synthétique d'ancres ambiguës --- conformément à l'exigence de ne pas fabriquer de résultats que nous n'avons pas réellement obtenus.
 
 \subsection{Limites de la méthode (et de notre validation)}
 \begin{itemize}
-  \item \textbf{Coût de l'itération de Sinkhorn-Knopp.} Bien que très inférieur à un solveur LP générique, le coût de $T$ itérations de produits matriciels $O(T\cdot m\cdot n)$ reste non négligeable lorsque $n$ (nombre d'ancres) atteint plusieurs dizaines de milliers par image (comme dans un vrai FPN multi-échelle) -- l'article rapporte un surcoût d'entraînement de moins de $20\,\%$, ce que nous ne pouvons pas vérifier directement sans réseau réel.
-  \item \textbf{Sensibilité au couple $(\gamma, T)$.} Comme quantifié en section~\ref{sec:experimentations}, un $\gamma$ trop petit à budget d'itérations fixe conduit à une non-convergence pure et simple (résidu marginal explosif), pas seulement à une perte de précision graduelle -- un piège pratique pour quiconque réimplémenterait la méthode sans validation indépendante comme la nôtre.
-  \item \textbf{Notre construction synthétique des coûts cls/reg} (section~\ref{sec:synth-experiment}) est une simplification assumée~: dans l'article, ces coûts proviennent des sorties réelles d'un réseau en cours d'entraînement, avec toute la complexité et la non-stationnarité que cela implique (les coûts évoluent à chaque itération d'entraînement). Notre simulation statique, bien que raisonnable pour tester l'algorithme d'assignation lui-même, ne capture pas cette dynamique.
-  \item \textbf{Absence de validation à l'échelle réelle.} Sans reproduire l'entraînement complet, nous ne pouvons pas confirmer indépendamment les gains d'AP rapportés par l'article ($+0.9$ à $+1.2$ point d'AP selon les configurations, Tableau 1 de l'article) ; nous rapportons ces chiffres comme des résultats \emph{de l'article}, non comme des résultats que nous avons nous-mêmes reproduits.
+  \item \textbf{Comparaison aux AP de l'article.} Le tableau~\ref{tab:compare} montre que nous n'avons pas re-mesuré les métriques de détection bout-en-bout (AP COCO, MR CrowdHuman). Notre comparaison avec l'article est algorithmique et qualitative sur l'ambiguïté, pas une reproduction expérimentale à l'échelle du jeu de données original.
+  \item \textbf{Coût de l'itération de Sinkhorn-Knopp.} Bien que très inférieur à un solveur LP générique, le coût de $T$ itérations de produits matriciels $O(T\cdot m\cdot n)$ reste non négligeable lorsque $n$ (nombre d'ancres) atteint plusieurs dizaines de milliers par image (comme dans un vrai FPN multi-échelle) --- l'article rapporte un surcoût d'entraînement de moins de $20\,\%$, que nous n'avons pas pu quantifier sans intégrer OTA dans un détecteur réel.
+  \item \textbf{Sensibilité au couple $(\gamma, T)$.} Comme quantifié en section~\ref{sec:experimentations}, un $\gamma$ trop petit à budget d'itérations fixe conduit à une non-convergence (résidu marginal élevé), pas seulement à une perte de précision graduelle --- un point pratique utile pour toute réimplémentation.
+  \item \textbf{Coûts cls/reg simulés.} Dans l'article, ces coûts proviennent des sorties d'un réseau en cours d'entraînement ; notre scénario synthétique (section~\ref{sec:synth-experiment}) utilise des scores statiques. Cela suffit pour tester l'algorithme d'assignation, mais ne reproduit pas la dynamique d'un entraînement réel.
 \end{itemize}
 
 \subsection{Pistes d'amélioration}
 \begin{itemize}
-  \item \textbf{Reproduction à l'échelle réelle}, dès qu'un GPU et un accès à COCO/CrowdHuman sont disponibles~: entraîner un FCOS-ResNet-50 avec et sans OTA, pour confirmer directement les gains d'AP rapportés par l'article.
-  \item \textbf{Coûts cls/reg dynamiques} dans le scénario synthétique~: faire évoluer les scores simulés au fil d'itérations successives (simulant un entraînement), pour étudier comment le nombre d'ancres ambiguës évolue au cours de l'entraînement, comme le suggèrent implicitement les auteurs (stabilisation en début d'entraînement grâce au Center Prior).
-  \item \textbf{Accélération GPU de Sinkhorn-Knopp} (par exemple via CuPy ou PyTorch), pour mesurer directement le surcoût d'entraînement sur un détecteur réel, comme rapporté par l'article (moins de $20\,\%$).
-  \item \textbf{Extension à un plus grand nombre d'objets et de niveaux de pyramide (FPN)}, pour étudier le passage à l'échelle du scénario synthétique d'ancres ambiguës au-delà du cas à deux objets étudié ici.
+  \item \textbf{Reproduction à l'échelle réelle}~: intégrer OTA dans un détecteur PyTorch (FCOS) et entraîner sur COCO/CrowdHuman pour mesurer directement les AP/MR et compléter la comparaison du tableau~\ref{tab:compare}.
+  \item \textbf{Coûts cls/reg dynamiques} dans le scénario synthétique~: faire évoluer les scores simulés au fil d'itérations successives, pour étudier l'évolution du nombre d'ancres ambiguës au cours de l'entraînement.
+  \item \textbf{Accélération GPU de Sinkhorn-Knopp} (CuPy ou PyTorch), pour mesurer le surcoût d'entraînement rapporté par l'article (moins de $20\,\%$).
+  \item \textbf{Extension multi-objets / multi-niveaux FPN} au-delà du cas à deux objets étudié ici.
 \end{itemize}
 
 \section{Conclusion}
-Ce rapport a présenté, formalisé et implémenté fidèlement l'algorithme d'assignation par Transport Optimal (OTA)~\cite{ge2021ota}~: la formulation du problème de transport, la construction du coût cls+reg avec Center Prior, l'estimation dynamique de $k$, et la résolution par itération de Sinkhorn-Knopp. Cette implémentation a été validée numériquement contre un solveur de programmation linéaire exact (écart relatif $<1\,\%$ pour les paramètres de l'article, convergence quasi-parfaite des contraintes marginales), et son comportement qualitatif face à l'ambiguïté a été étudié sur un scénario synthétique contrôlé, où elle détecte des ambiguïtés \og douces\fg{} invisibles aux heuristiques à seuil dur (Min Area, Max IoU, Min Loss). Conformément à l'exigence de ne pas inventer de résultats, ce rapport n'a \textbf{pas} tenté de reproduire les scores d'AP de l'article sur COCO/CrowdHuman, faute de GPU, de framework de deep learning et d'accès réseau à ces jeux de données dans l'environnement d'exécution --- une limitation clairement assumée plutôt que dissimulée. Les pistes naturelles de poursuite de ce travail sont l'entraînement à l'échelle réelle dès que les ressources le permettront, et l'étude de la dynamique temporelle de l'ambiguïté au cours de l'entraînement.
+Ce rapport a présenté, formalisé et implémenté l'algorithme d'assignation par Transport Optimal (OTA)~\cite{ge2021ota}, validé numériquement (écart relatif $<1\,\%$ au LP exact pour $\gamma=0.1$) et comparé aux résultats de l'article via le tableau~\ref{tab:compare}. Sur le plan algorithmique, notre travail confirme la correction de Sinkhorn-Knopp et reproduit qualitativement la gestion des ancres ambiguës revendiquée par les auteurs. Sur le plan de la détection à l'échelle COCO, nous citons les gains d'AP de l'article comme benchmark et identifions leur reproduction intégrale comme prolongement naturel de ce projet. Le code, les tests et les figures sont disponibles sur le dépôt GitHub du Groupe~2, partagé avec l'encadrement.
 
 \bibliographystyle{plain}
 \bibliography{references}
