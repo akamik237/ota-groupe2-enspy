@@ -1,4 +1,4 @@
-# OTA — Groupe 2 ENSPY
+# OTA — Groupe 2 ENSPY (Computer Vision)
 
 **Article :** Ge et al., *OTA: Optimal Transport Assignment for Object Detection*, CVPR 2021.
 
