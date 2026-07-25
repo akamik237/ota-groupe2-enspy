@@ -61,7 +61,7 @@ pdflatex carnet_lecture.tex && pdflatex carnet_lecture.tex
 Professeur (`htapamo`) : accès en lecture invité sur le dépôt (repo public + invitation collaborateur).
 
 
-Nous **ne reproduisons pas** l'entraînement FCOS-ResNet-50 sur COCO (AP 40,7 % de l'article) : pas de GPU / PyTorch / accès COCO dans notre environnement. Le dépôt se concentre sur l'**algorithme d'assignation OTA** lui-même, validé numériquement et sur un scénario synthétique contrôlé. Voir la section Analyse critique du rapport.
+Nous **n'utilisons pas PyTorch** et **n'intégrons pas** OTA dans FCOS. Le dépôt contient l'algorithme d'assignation (NumPy/SciPy) validé numériquement + expérience synthétique. Les AP COCO de l'article (40,7 %) sont cités comme référence dans le rapport (tableau comparatif).
 
 ## Référence
 

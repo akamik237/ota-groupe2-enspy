@@ -56,13 +56,13 @@
 \begin{itemize}[leftmargin=*]
   \item \textbf{Implémentation} fidèle en Python/NumPy/SciPy : \texttt{sinkhorn\_knopp}, \texttt{build\_cost\_matrix}, \texttt{dynamic\_k\_estimation}, baselines Min Area / Max IoU / Min Loss.
   \item \textbf{Validation} : comparaison numérique à \texttt{scipy.optimize.linprog} (8 essais, écart relatif 0,16--0,73\,\%).
-  \item \textbf{Expérience} : scénario synthétique (2 objets qui se chevauchent, 625 ancres) faute de GPU/PyTorch/COCO --- honnêtement documenté dans le rapport.
-  \item \textbf{Non reproduit} : entraînement FCOS-ResNet-50 sur COCO (AP 40,7\,\% de l'article) --- hors portée matérielle en 1 jour ; perspective future dans le rapport.
+  \item \textbf{Expérience} : scénario synthétique (625 ancres) ; coûts simulés car \textbf{pas de PyTorch ni de FCOS} dans le dépôt.
+  \item \textbf{Non intégré} : pipeline PyTorch/FCOS + AP COCO de l'article --- perspective future (brancher \texttt{ot\_assignment.py} sur un détecteur).
 \end{itemize}
 
 \section*{Limites et perspectives}
 
-L'implémentation couvre l'\emph{algorithme d'assignation}, pas le pipeline de détection complet. Les coûts cls/reg de l'expérience synthétique sont simulés (scores décroissants avec la distance au centre), pas issus d'un réseau entraîné. Piste prioritaire : brancher OTA sur un détecteur PyTorch + COCO dès qu'un GPU est disponible.
+Le dépôt contient le \textbf{module d'assignation OTA} (NumPy/SciPy), pas PyTorch ni FCOS. Les AP COCO de l'article sont cités comme référence ; piste future : intégration dans un détecteur PyTorch.
 
 \vfill
 \begin{center}

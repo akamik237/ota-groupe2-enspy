@@ -72,7 +72,7 @@ Conformément au cadrage académique de ce travail, ce rapport~:
   \item discute limites et pistes d'amélioration (section~\ref{sec:analyse}).
 \end{itemize}
 
-\textbf{Avertissement méthodologique (à lire avant toute chose).} L'environnement d'exécution utilisé pour ce projet ne dispose \emph{ni} de GPU, \emph{ni} de PyTorch/TensorFlow, \emph{ni} d'un accès réseau vers COCO~\cite{lin2014coco} ou CrowdHuman~\cite{shao2018crowdhuman}. Entraîner un FCOS-ResNet-50 sur COCO comme dans l'article (90k à 180k itérations, 8 GPU) est donc totalement hors de portée de cet environnement. Nous l'indiquons explicitement, conformément à l'exigence de ne pas inventer de résultats~: \textbf{les Tableaux 1, 2, 3, 4, 5, 6 de l'article original ne sont pas reproduits dans ce rapport.} À la place, nous concentrons l'effort de vérification et d'expérimentation sur ce qui constitue le véritable objet du sujet --- l'algorithme d'assignation par transport optimal lui-même --- via (a) une validation numérique rigoureuse de l'itération de Sinkhorn-Knopp contre un solveur de programmation linéaire exact, et (b) une expérience synthétique contrôlée reproduisant qualitativement la Figure 1, la Figure 3 et le Tableau 2 de l'article (gestion des ancres ambiguës), avec des coûts cls/reg simulés (et documentés comme tels) en l'absence d'un réseau réellement entraîné.
+\textbf{Périmètre de l'implémentation.} Notre dépôt GitHub contient un \textbf{module d'assignation OTA autonome} (Python/NumPy/SciPy)~: il calcule le plan de transport à partir de coûts fournis en entrée. Il n'inclut \textbf{ni PyTorch, ni TensorFlow, ni FCOS}, contrairement à l'article. Les métriques AP/MR de l'article ne peuvent donc pas être reproduites sans une étape d'intégration future dans un détecteur. Nous concentrons la validation sur l'algorithme lui-même (Sinkhorn-Knopp, baselines, scénario synthétique).
 
 \section{État de l'art}
 \label{sec:etat-art}
@@ -181,7 +181,7 @@ def ota_assign(image, anchors, gts, gamma=0.1, T=50, alpha=1.5, r=..., q=20):
 \section{Implémentation}
 \label{sec:implementation}
 
-L'implémentation est écrite en Python 3, avec NumPy pour le calcul matriciel et SciPy pour la validation (résolution exacte du programme linéaire de référence). Aucune dépendance à un framework de deep learning n'est nécessaire pour l'algorithme d'assignation lui-même (qui opère sur des coûts déjà calculés) ; en environnement de production, ces coûts proviendraient bien sûr des sorties (scores, boîtes) d'un réseau réellement entraîné.
+L'implémentation est écrite en Python 3, avec NumPy et SciPy uniquement. \textbf{PyTorch n'est pas utilisé} et le module n'est \textbf{pas branché} sur un détecteur (FCOS ou autre)~: il reçoit des coûts cls/reg déjà calculés (simulés dans nos expériences). C'est une différence volontaire de périmètre par rapport à l'article, qui intègre OTA dans un pipeline d'entraînement complet.
 
 \subsection{Structure du code}
 \begin{itemize}
@@ -238,7 +238,7 @@ Ce résultat, honnêtement rapporté, est riche d'enseignement~: pour $\gamma=0.
 
 \subsection{Scénario synthétique d'ancres ambiguës}
 \label{sec:synth-experiment}
-\textbf{Rappel de l'avertissement méthodologique}~: en l'absence de GPU, de PyTorch et d'accès à COCO, ce scénario est \textbf{entièrement synthétique}~: deux boîtes vérité-terrain se chevauchant partiellement (analogue à la Figure 1 de l'article) et une grille régulière de $25\times25=625$ ancres ponctuelles (analogue à un détecteur \emph{anchor-free} comme FCOS). Les scores de confiance et les \og qualités de régression\fg{} par ancre sont \textbf{simulés} par une fonction décroissante de la distance au centre de l'objet le plus proche, plus un bruit gaussien, imitant un détecteur \emph{partiellement entraîné} (et non un détecteur réel). Ce choix nous permet de tester fidèlement l'\emph{algorithme} d'assignation --- ce qui est l'objet du sujet --- sans prétendre simuler un vrai réseau de neurones.
+\textbf{Scénario synthétique.} Faute de PyTorch et d'intégration FCOS dans notre dépôt, ce scénario utilise des coûts cls/reg \textbf{simulés} (deux boîtes qui se chevauchent, grille $25\times25=625$ ancres). Il permet de tester l'algorithme d'assignation --- cœur de OTA --- sans prétendre reproduire un réseau entraîné sur COCO.
 
 La figure~\ref{fig:assignment} montre les cartes d'assignation obtenues avec les quatre stratégies (Min Area, Max IoU, Min Loss, OTA) pour un rayon de Center Prior $r=15$.
 
@@ -255,7 +255,7 @@ La figure~\ref{fig:assignment} montre les cartes d'assignation obtenues avec les
 \subsection{Comparaison Article vs Notre travail}
 \label{sec:compare-article}
 
-Conformément aux consignes du projet, nous confrontons explicitement les résultats de Ge et al.~\cite{ge2021ota} à ceux produits par notre implémentation. Le tableau~\ref{tab:compare} distingue les métriques \emph{reproduites ou validées} par notre code de celles qui restent des \emph{références bibliographiques} de l'article (nous ne les ré-inventons pas, nous les citons pour situer notre travail).
+Conformément aux consignes du projet, nous confrontons explicitement les résultats de Ge et al.~\cite{ge2021ota} à ceux produits par notre implémentation. Le tableau~\ref{tab:compare} distingue ce que l'article obtient avec un pipeline PyTorch/FCOS complet de ce que \textbf{notre dépôt} contient réellement~: un module d'assignation OTA autonome en NumPy/SciPy, \emph{sans PyTorch} et \emph{sans intégration} dans un détecteur.
 
 \begin{table}[h]
 \centering
@@ -268,40 +268,40 @@ Conformément aux consignes du projet, nous confrontons explicitement les résul
 \midrule
 Objectif &
 Entraînement bout-en-bout d'un détecteur (FCOS) avec assignation OTA &
-Validation fidèle de l'\emph{algorithme} d'assignation (Sinkhorn, coût, Dynamic~$k$, Center Prior) \\
+Module autonome~: validation de l'\emph{algorithme} d'assignation (Sinkhorn, coût, Dynamic~$k$, Center Prior) --- \textbf{sans entraînement de détecteur} \\
 \addlinespace
 Jeux de données &
 MS COCO~\cite{lin2014coco}, CrowdHuman~\cite{shao2018crowdhuman} &
-Tests numériques aléatoires + scénario synthétique (2 objets qui se chevauchent, 625 ancres) \\
+Tests numériques + scénario synthétique (2 objets, 625 ancres) ; coûts cls/reg \emph{simulés}, pas issus d'un réseau \\
 \addlinespace
 AP COCO (FCOS, ResNet-50, 1$\times$) &
 \textbf{40,7\,\%} AP (val., Tableau~1) &
-Non mesuré --- hors périmètre de ce projet (pas d'entraînement du détecteur complet) \\
+\textbf{Non applicable} --- PyTorch/FCOS absents du projet ; chiffre cité comme référence \\
 \addlinespace
 AP COCO (ResNet-101-FPN) &
 \textbf{45,3\,\%} AP (test-dev, Tableau~5) &
-Référence bibliographique uniquement \\
+\textbf{Non applicable} --- référence bibliographique uniquement \\
 \addlinespace
 CrowdHuman (MR) &
 \textbf{46,6\,\%} MR (Tableau~6) &
-Non mesuré --- référence bibliographique \\
+\textbf{Non applicable} --- référence bibliographique uniquement \\
 \addlinespace
 Validation Sinkhorn &
 $\gamma=0.1$, $T=50$ itér. (choix empirique) &
-Écart au LP exact~: \textbf{0,16--0,73\,\%} ; résidu marginal $<10^{-5}$ (section~\ref{sec:experimentations}) \\
+Écart au LP exact~: \textbf{0,16--0,73\,\%} ; résidu marginal $<10^{-5}$ --- \textbf{mesuré par notre code} (section~\ref{sec:experimentations}) \\
 \addlinespace
 Gestion des ancres ambiguës &
 Moins d'ambiguïtés qu'avec Min Area / Max IoU / Min Loss (Tableau~3, Fig.~3) &
-Comportement \emph{qualitatif} cohérent~: OTA détecte des ambiguïtés «~douces~» ($\max_i\pi^\star_{ij}<0.9$) là où les heuristiques en comptent presque zéro (tab.~\ref{tab:ambig}, $r=15$) \\
+Comportement qualitatif cohérent sur scénario synthétique (tab.~\ref{tab:ambig}, $r=15$) --- \textbf{mesuré par notre code} \\
 \addlinespace
 Implémentation &
 PyTorch, intégration dans pipeline FCOS &
-Python/NumPy/SciPy, tests unitaires, \texttt{demo.py}, dépôt GitHub public \\
+\textbf{Python/NumPy/SciPy seulement} ; pas de PyTorch, pas de FCOS ; tests + \texttt{demo.py} + GitHub \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Lecture.} Notre comparaison avec l'article est donc \textbf{partielle mais explicite}~: nous confirmons numériquement le cœur algorithmique (Sinkhorn-Knopp, paramètres $\gamma=0.1$) et reproduisons qualitativement le phénomène central des ancres ambiguës ; nous rapportons les gains d'AP de l'article comme benchmark de référence, sans prétendre les avoir re-mesurés dans ce projet.
+\textbf{Lecture.} Les lignes AP/MR et PyTorch/FCOS montrent clairement l'écart de périmètre~: nous n'avons \textbf{pas} PyTorch ni de détecteur intégré dans le dépôt. Notre contribution vérifiable porte sur Sinkhorn-Knopp, les baselines et l'expérience synthétique d'ambiguïté ; les scores de l'article servent de benchmark de référence.
 
 \subsection{Dynamic k et nombre d'ancres ambiguës}
 Sur ce scénario, l'estimation dynamique donne $k_{gt_0}=k_{gt_1}=14$ (résultat réel, reproductible). Le tableau~\ref{tab:ambig} et la figure~\ref{fig:ambig-radius} présentent le nombre d'ancres ambiguës (au sens de l'article, $\max_i\pi^\star_{ij}<0.9$ pour OTA ; candidates positives pour $\ge2$ gt simultanément pour les heuristiques) en fonction du rayon $r$ du Center Prior.
